@@ -1,15 +1,15 @@
-package main
+package matching
 
 import "regexp"
 
 // Video content
 type Content struct {
-	name string
-	year string
-	film bool
-	tv bool
-	season string
-	number string
+	Name string
+	Year string
+	Film bool
+	Tv bool
+	Season string
+	Number string
 }
 
 func MatchContent(name string) Content {

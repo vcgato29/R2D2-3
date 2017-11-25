@@ -5,6 +5,8 @@ import(
 	"os"
 	"path/filepath"
 	"strings"
+	"github.com/bnmcg/r2d2/lookup"
+	"github.com/bnmcg/r2d2/matching"
 )
 
 var fileTypes = map[string]bool {
@@ -17,7 +19,8 @@ var fileTypes = map[string]bool {
 
 
 func main() {
-	filepath.Walk("/mnt/media/downloads", processDirectory)
+	//filepath.Walk("/mnt/media/downloads", processDirectory)
+	lookup.LookupTmdbTv("Lif")
 }
 
 func processDirectory(path string, f os.FileInfo, err error) error {
@@ -26,9 +29,9 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 
 	if fileTypes[extension] {
 		name := strings.TrimSuffix(f.Name(), extension)
-		content := MatchContent(name)
+		content := matching.MatchContent(name)
 
-		fmt.Println(fmt.Sprintf("Name: %s, Episode: %s, Season: %s", content.name, content.number, content.season))
+		fmt.Println(fmt.Sprintf("Name: %s, Episode: %s, Season: %s", content.Name, content.Number, content.Season))
 	}
 	
 	return nil
