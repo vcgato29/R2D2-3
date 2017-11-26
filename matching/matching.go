@@ -31,17 +31,19 @@ func MatchContent(name string) Content {
 			fmt.Println(fmt.Sprintf("[r2d2] Matched regex rule %s", key))
 			matches := regex.FindStringSubmatch(name)
 			groups := getMatchGroups(matches, regex)
-
-			fmt.Println(groups)
 			
 			intYear, intEpisode, intSeason := -1, -1, -1
 			
-			intYear, errYear := strconv.Atoi(groups["year"])
-			intEpisode, errEpisode := strconv.Atoi(groups["number"])
-			intSeason, errSeason := strconv.Atoi(groups["season"])
+			if groups["year"] != "" {
+				intYear, _ = strconv.Atoi(groups["year"])
+			}
 
-			if errYear != nil || errEpisode != nil || errSeason != nil {
-				//fmt.Println(fmt.Sprintf("[ERR] Year: %s, Episode: %s, Season: %s", errYear, errEpisode, errSeason))
+			if groups["number"] != "" {
+				intEpisode, _ = strconv.Atoi(groups["number"])
+			}
+
+			if groups["season"] != "" {
+				intSeason, _ = strconv.Atoi(groups["season"])
 			}
 
 			// No season captured, assume SE01 - sometimes SE0 is used for specials, which is why

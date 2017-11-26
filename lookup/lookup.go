@@ -15,9 +15,9 @@ type TvResult struct {
 	FirstAirDate string
 }
 
-func tmdbTvEpisode(seriesId int, season int, episode int) (*tmdb.TvEpisode, error) {
+func tmdbTvEpisode(seriesID int, season int, episode int) (*tmdb.TvEpisode, error) {
 	db := tmdb.Init(os.Getenv("TMDB_API"))	
-	lookup, err := db.GetTvEpisodeInfo(seriesId, season, episode, nil)
+	lookup, err := db.GetTvEpisodeInfo(seriesID, season, episode, nil)
 
 	if err == nil {
 		return lookup, nil
