@@ -5,6 +5,7 @@ import(
 	"os"
 	"path/filepath"
 	"strings"
+	"strconv"
 	"github.com/bnmcg/r2d2/lookup"
 	"github.com/bnmcg/r2d2/matching"
 	"time"
@@ -35,13 +36,22 @@ var acronyms = map[string]string {
 var outputDirectoryFormat = "{Show}/Season {Season}/"
 var outputFileFormat = "{Show} - S{Season}E{Number} - {Episode}"
 
+var destinationDirectory string
+
 func main() {
 	// Get input directory
 	// args[1] = Source path
+	// args[2] = Destination path
 	args := os.Args
+
+	destinationDirectory = args[2]
+
+	// Interval between runs
+	interval, _ := strconv.Atoi(os.Getenv("R2D2_INTERVAL"))
+
 	for {
 		filepath.Walk(args[1], processDirectory)
-		time.Sleep(time.Second * 30)	
+		time.Sleep(time.Duration(interval) * time.Second)
 	}
 }
 
@@ -64,16 +74,8 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 		if err == nil {
 			fmt.Println(fmt.Sprintf("[tmdb] Show: %s, episode: %s, aired: %s, first seen: %s", result.Title, result.EpisodeName, result.AirDate, result.FirstAirDate))
 			// Generate output path
-			outputPath := strings.Replace(outputDirectoryFormat, "{Show}", result.Title, -1)
-			outputPath = strings.Replace(outputPath, "{Season}", fmt.Sprintf("%02d", result.SeasonNum), -1)
 
-			outputFile := strings.Replace(outputFileFormat, "{Show}", result.Title, -1)
-			outputFile = strings.Replace(outputFile, "{Episode}", result.EpisodeName, -1)			
-			outputFile = strings.Replace(outputFile, "{Season}", fmt.Sprintf("%02d", result.SeasonNum), -1)
-			outputFile = strings.Replace(outputFile, "{Number}", fmt.Sprintf("%02d", result.EpisodeNum), -1)		
-			outputFile += extension
-
-			fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s%s", outputPath, outputFile))
+			fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generateTvOutputPath(result, extension)))
 		// Lookup failed
 		} else {
 			// Try swapping the matched episode title and series title
@@ -95,6 +97,15 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 	return nil
 }
 
-func generateTvOutputPath(lookup lookup.TvResult) string {
-	return ""
+func generateTvOutputPath(lookup lookup.TvResult, extension string) string {
+	outputPath := strings.Replace(outputDirectoryFormat, "{Show}", lookup.Title, -1)
+	outputPath = strings.Replace(outputPath, "{Season}", fmt.Sprintf("%02d", lookup.SeasonNum), -1)
+
+	outputFile := strings.Replace(outputFileFormat, "{Show}", lookup.Title, -1)
+	outputFile = strings.Replace(outputFile, "{Episode}", lookup.EpisodeName, -1)			
+	outputFile = strings.Replace(outputFile, "{Season}", fmt.Sprintf("%02d", lookup.SeasonNum), -1)
+	outputFile = strings.Replace(outputFile, "{Number}", fmt.Sprintf("%02d", lookup.EpisodeNum), -1)		
+	outputFile += extension
+
+	return fmt.Sprintf("%s%s%s", destinationDirectory, outputPath, outputFile)
 }
