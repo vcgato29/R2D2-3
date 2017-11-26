@@ -39,7 +39,10 @@ func main() {
 	// Get input directory
 	// args[1] = Source path
 	args := os.Args
-	filepath.Walk(args[1], processDirectory)
+	for {
+		filepath.Walk(args[1], processDirectory)
+		time.Sleep(time.Second * 30)	
+	}
 }
 
 func processDirectory(path string, f os.FileInfo, err error) error {
