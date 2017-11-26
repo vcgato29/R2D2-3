@@ -3,6 +3,7 @@ package matching
 import(
 	"regexp"
 	"strconv"
+	"fmt"
 )
 
 // Video content
@@ -20,16 +21,20 @@ func MatchContent(name string) Content {
 	regexes := map[string]string {
 		"TNSE": `(?P<title>[A-z]+) - (?P<season>[0-9]+)x(?P<number>[0-9]+) - (?P<episode>([A-z](\s)*|[0-9](\s)*)+)`,
 		"E1": `(?P<title>([A-z]|[0-9]|\.)+)(\.|\s)S(?P<season>[0-9]{2})E(?P<number>[0-9]{2})`,
+		"NSE": `(?P<title>([A-z]|[0-9]|\s|\.)+) E(?P<number>[0-9]{1,2}) - (?P<episode>([A-z]|[0-9]|\s|\.)+)`,
 	}
 
-	for _, value := range regexes {
+	for key, value := range regexes {
 		regex := regexp.MustCompile(value)
 		
 		if regex.MatchString(name) {
+			fmt.Println(fmt.Sprintf("[r2d2] Matched regex rule %s", key))
 			matches := regex.FindStringSubmatch(name)
 			groups := getMatchGroups(matches, regex)
 
-			intYear, intEpisode, intSeason := 0, 0, 0
+			fmt.Println(groups)
+			
+			intYear, intEpisode, intSeason := -1, -1, -1
 			
 			intYear, errYear := strconv.Atoi(groups["year"])
 			intEpisode, errEpisode := strconv.Atoi(groups["number"])
@@ -37,6 +42,13 @@ func MatchContent(name string) Content {
 
 			if errYear != nil || errEpisode != nil || errSeason != nil {
 				//fmt.Println(fmt.Sprintf("[ERR] Year: %s, Episode: %s, Season: %s", errYear, errEpisode, errSeason))
+			}
+
+			// No season captured, assume SE01 - sometimes SE0 is used for specials, which is why
+			// we're using SE-1 as the default
+			if intSeason == -1 {
+				fmt.Println("[r2d2] No season matched, defaulting to 1")
+				intSeason = 1
 			}
 
 			return Content{
