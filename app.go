@@ -47,7 +47,7 @@ func main() {
 
 func processDirectory(path string, f os.FileInfo, err error) error {
 
-	fmt.Println(fmt.Sprintf("[r2d2] Procesing file: %s", path))
+	fmt.Println(fmt.Sprintf("[r2d2] Processing file: %s", path))
 
 	extension := filepath.Ext(f.Name())
 	fmt.Println(fmt.Sprintf("[r2d2] Matched extension: %s", extension))	
