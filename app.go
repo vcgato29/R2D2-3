@@ -74,7 +74,6 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 		if err == nil {
 			fmt.Println(fmt.Sprintf("[tmdb] Show: %s, episode: %s, aired: %s, first seen: %s", result.Title, result.EpisodeName, result.AirDate, result.FirstAirDate))
 			// Generate output path
-
 			fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generateTvOutputPath(result, extension)))
 		// Lookup failed
 		} else {
@@ -82,6 +81,7 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 			result, err := lookup.Tv(content.Episode, content.Season, content.Number)
 			if err == nil {
 				fmt.Println(fmt.Sprintf("[tmdb] Show: %s, episode: %s, aired: %s, first seen: %s", result.Title, result.EpisodeName, result.AirDate, result.FirstAirDate))
+				fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generateTvOutputPath(result, extension)))				
 			// Give up
 			} else {
 				fmt.Println(err)		
