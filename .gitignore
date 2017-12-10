@@ -19,3 +19,6 @@
 # Compiled binary
 app
 debug
+
+# Compose testing
+docker-compose.yml
