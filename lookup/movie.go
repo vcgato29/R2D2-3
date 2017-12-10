@@ -1,19 +1,29 @@
 package lookup
 
-import(
-	"github.com/ryanbradynd05/go-tmdb"
-	"os"
+import (
 	"errors"
+	"os"
+	"strings"
+
+	"github.com/araddon/dateparse"
+	"github.com/ryanbradynd05/go-tmdb"
 )
 
-type Result struct {
-	Title string
+type MovieResult struct {
+	Title       string
 	ReleaseDate string
-	Genres []struct {ID int; Name string }
+	Year        int
+	Genres      []struct {
+		ID   int
+		Name string
+	}
 }
 
 // Returns the most likely TV result from the TMdb API
 func tmdbMovie(name string) (*tmdb.Movie, error) {
+	// Replace any .'s in the title with spaces
+	name = strings.Replace(name, ".", " ", -1)
+
 	db := tmdb.Init(os.Getenv("TMDB_API"))
 	lookup, _ := db.SearchMovie(name, nil)
 
@@ -41,22 +51,35 @@ func tmdbMovie(name string) (*tmdb.Movie, error) {
 	if candidateID != 0 {
 		return db.GetMovieInfo(candidateID, nil)
 	}
-	
+
 	// Nothing found on TMdb
 	return nil, errors.New("no TMdb match found when looking up movie")
 }
 
-func Movie(name string, year int) (Result, error) {
+func Movie(name string, year int) (MovieResult, error) {
 	tmdbResult, err := tmdbMovie(name)
 
 	if err == nil {
-		return Result{
-			Title: tmdbResult.Title,
-			ReleaseDate: tmdbResult.ReleaseDate,
-			Genres: tmdbResult.Genres,
-		}, err		
 
+		// Parse release date
+		date, parseError := dateparse.ParseAny(tmdbResult.ReleaseDate)
+
+		if parseError == nil {
+			return MovieResult{
+				Title:       tmdbResult.Title,
+				ReleaseDate: tmdbResult.ReleaseDate,
+				Year:        date.Year(),
+				Genres:      tmdbResult.Genres,
+			}, err
+		}
+
+		return MovieResult{
+			Title:       tmdbResult.Title,
+			ReleaseDate: tmdbResult.ReleaseDate,
+			Year:        0000,
+			Genres:      tmdbResult.Genres,
+		}, err
 	}
 
-	return Result{Title: "NA"}, err
+	return MovieResult{Title: "NA"}, err
 }
