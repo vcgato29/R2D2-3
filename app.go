@@ -109,3 +109,7 @@ func generateTvOutputPath(lookup lookup.TvResult, extension string) string {
 
 	return fmt.Sprintf("%s%s%s", destinationDirectory, outputPath, outputFile)
 }
+
+func generateMovieOutputPath() {
+	
+}
