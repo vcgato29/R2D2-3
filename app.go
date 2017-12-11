@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -34,13 +35,14 @@ var acronyms = map[string]string{
 	"aotc":   "Attack of The Clones",
 }
 
-var outputTvDirectoryFormat = "{Show}/Season {Season}/"
+var outputTvDirectoryFormat = "TV Shows/{Show}/Season {Season}/"
 var outputTvFileFormat = "{Show} - S{Season}E{Number} - {Episode}"
 
-var outputMovieDirectoryFormat = "{Movie}/"
-var outputMovieFileFormat = "{Movie} - {Year}"
+var outputMovieDirectoryFormat = "Movies/{Movie} ({Year})/"
+var outputMovieFileFormat = "{Movie} ({Year})"
 
 var destinationDirectory string
+var sourceDirectory string
 
 func main() {
 	// Get input directory
@@ -48,6 +50,7 @@ func main() {
 	// args[2] = Destination path
 	args := os.Args
 
+	sourceDirectory = args[1]
 	destinationDirectory = args[2]
 
 	// Interval between runs
@@ -78,15 +81,21 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 			// Lookup successful
 			if err == nil {
 				fmt.Println(fmt.Sprintf("[tmdb] Show: %s, episode: %s, aired: %s, first seen: %s", result.Title, result.EpisodeName, result.AirDate, result.FirstAirDate))
-				// Generate output path
-				fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generateTvOutputPath(result, extension)))
-				// Lookup failed
+				generatedFileName, generatedDirectory, generatedOutputPath := generateTvOutputPath(result, extension)
+				fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generatedOutputPath))
+
+				moveFile(path, generatedDirectory, generatedFileName)
 			} else {
+				fmt.Println(fmt.Sprintf("[r2d2] ERROR: %s", err))
 				// Try swapping the matched episode title and series title
 				result, err := lookup.Tv(content.Episode, content.Season, content.Number)
 				if err == nil {
 					fmt.Println(fmt.Sprintf("[tmdb] Show: %s, episode: %s, aired: %s, first seen: %s", result.Title, result.EpisodeName, result.AirDate, result.FirstAirDate))
-					fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generateTvOutputPath(result, extension)))
+					generatedFileName, generatedDirectory, generatedOutputPath := generateTvOutputPath(result, extension)
+					fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generatedOutputPath))
+
+					moveFile(path, generatedDirectory, generatedFileName)
+
 				} else {
 					fmt.Println(err)
 				}
@@ -99,15 +108,21 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 			// Lookup successful
 			if err == nil {
 				fmt.Println(fmt.Sprintf("[tmdb] Movie: %s, released: %s", result.Title, result.ReleaseDate))
-				// Generate output path
-				fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generateMovieOutputPath(result, extension)))
+				generatedFileName, generatedDirectory, generatedOutputPath := generateMovieOutputPath(result, extension)
+				fmt.Println(fmt.Sprintf("[r2d2] Generated output path: %s", generatedOutputPath))
+
+				moveFile(path, generatedDirectory, generatedFileName)
 			} else {
 				fmt.Println(err)
 			}
 		}
 
 	} else {
-		fmt.Println(fmt.Sprintf("[r2d2] Skipping - not a valid extension: %s", path))
+		// Remove files that aren't a valid file
+		fmt.Println(fmt.Sprintf("[r2d2] Removing - not a valid extension: %s", path))
+		if path != sourceDirectory {
+			os.Remove(path)
+		}
 	}
 
 	fmt.Println()
@@ -116,7 +131,22 @@ func processDirectory(path string, f os.FileInfo, err error) error {
 	return nil
 }
 
-func generateTvOutputPath(lookup lookup.TvResult, extension string) string {
+func moveFile(inputPath string, outputDirectoryPath string, outputFilename string) {
+	// Move
+	if !(os.Getenv("MODE") == "TEST") {
+		fmt.Println("[r2d2] Moving files")
+		// Create required directory
+		os.MkdirAll(outputDirectoryPath, os.ModePerm)
+		commandArgs := []string{inputPath, fmt.Sprintf("%s%s", outputDirectoryPath, outputFilename)}
+		moveError := exec.Command("mv", commandArgs...).Run()
+
+		if moveError != nil {
+			fmt.Println(moveError)
+		}
+	}
+}
+
+func generateTvOutputPath(lookup lookup.TvResult, extension string) (string, string, string) {
 	outputPath := strings.Replace(outputTvDirectoryFormat, "{Show}", lookup.Title, -1)
 	outputPath = strings.Replace(outputPath, "{Season}", fmt.Sprintf("%02d", lookup.SeasonNum), -1)
 
@@ -126,10 +156,11 @@ func generateTvOutputPath(lookup lookup.TvResult, extension string) string {
 	outputFile = strings.Replace(outputFile, "{Number}", fmt.Sprintf("%02d", lookup.EpisodeNum), -1)
 	outputFile += extension
 
-	return fmt.Sprintf("%s%s%s", destinationDirectory, outputPath, outputFile)
+	// Return file, directory, combined
+	return outputFile, fmt.Sprintf("%s%s", destinationDirectory, outputPath), fmt.Sprintf("%s%s%s", destinationDirectory, outputPath, outputFile)
 }
 
-func generateMovieOutputPath(lookup lookup.MovieResult, extension string) string {
+func generateMovieOutputPath(lookup lookup.MovieResult, extension string) (string, string, string) {
 	outputPath := strings.Replace(outputMovieDirectoryFormat, "{Movie}", lookup.Title, -1)
 	outputPath = strings.Replace(outputPath, "{Year}", strconv.Itoa(lookup.Year), -1)
 
@@ -138,5 +169,6 @@ func generateMovieOutputPath(lookup lookup.MovieResult, extension string) string
 
 	outputFile += extension
 
-	return fmt.Sprintf("%s%s%s", destinationDirectory, outputPath, outputFile)
+	// Return file, directory, combined
+	return outputFile, fmt.Sprintf("%s%s", destinationDirectory, outputPath), fmt.Sprintf("%s%s%s", destinationDirectory, outputPath, outputFile)
 }

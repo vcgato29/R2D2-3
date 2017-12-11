@@ -39,7 +39,7 @@ func tmdbMovie(name string) (*tmdb.Movie, error) {
 		} else {
 			// More popular shows are more likely to be added to media libarires.
 			// Particularly if more popular with more votes
-			if element.VoteAverage > candidateRating && element.VoteCount > candidateVotes {
+			if (element.VoteAverage > candidateRating && element.VoteCount > candidateVotes) || (element.Title == name) {
 				candidateID = element.ID
 				candidateRating = element.VoteAverage
 				candidateVotes = element.VoteCount

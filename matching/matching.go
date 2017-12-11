@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 // Video content
@@ -32,6 +34,7 @@ func MatchContent(name string) Content {
 			fmt.Println(fmt.Sprintf("[r2d2] Matched regex rule %s", key))
 			matches := regex.FindStringSubmatch(name)
 			groups := getMatchGroups(matches, regex)
+			spew.Dump(groups)
 
 			intYear, intEpisode, intSeason := -1, -1, -1
 
@@ -47,8 +50,12 @@ func MatchContent(name string) Content {
 				intSeason, _ = strconv.Atoi(groups["season"])
 			}
 
-			if intSeason == -1 && intEpisode == -1 {
+			if (intSeason == -1) && (intEpisode == -1) {
 				fmt.Println("[r2d2] No season or episode match, assuming movie")
+				fmt.Println(fmt.Sprintf("Matched title: %s", groups["title"]))
+				fmt.Println(fmt.Sprintf("Matched year: %s", groups["year"]))
+				fmt.Println(fmt.Sprintf("Matched year: %s", groups["year"]))
+
 				return Content{
 					groups["title"],
 					"NA",
@@ -62,10 +69,16 @@ func MatchContent(name string) Content {
 
 			// No season captured, assume SE01 - sometimes SE0 is used for specials, which is why
 			// we're using SE-1 as the default
-			if intSeason == -1 && intEpisode != -1 {
+			if intSeason == -1 {
 				fmt.Println("[r2d2] No season matched, defaulting to 1")
 				intSeason = 1
 			}
+
+			fmt.Println(fmt.Sprintf("Matched title: %s", groups["title"]))
+			fmt.Println(fmt.Sprintf("Matched episode name: %s", groups["episode"]))
+			fmt.Println(fmt.Sprintf("Matched year: %s", groups["year"]))
+			fmt.Println(fmt.Sprintf("Matched season number: %s", groups["season"]))
+			fmt.Println(fmt.Sprintf("Matched episode number: %s", groups["number"]))
 
 			return Content{
 				groups["title"],
